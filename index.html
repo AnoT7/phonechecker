@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>เช็คทรศ. โดยพรี่ๆสีแสด</title>
+  <style>
+    /* -------------------- Font -------------------- */
+    @font-face {
+      font-family: 'Anantason Mon Thin';
+      src: url('assets/fonts/AnantasonMonDEMO-Thin.otf') format('opentype');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root{
+      --bg1:#ffb699; /* gradient start */
+      --bg2:#f39aa2; /* gradient end   */
+      --glass: rgba(255,255,255,.16);
+      --glass-2: rgba(255,255,255,.25);
+      --ink: #2b2b2b;
+      --ink-dim: rgba(0,0,0,.65);
+      --ok: #28c76f;    /* pass */
+      --ng: #ff4d4f;    /* fail */
+      --pill: rgba(255,255,255,.5);
+      --pill-active: rgba(255,255,255,.85);
+      --btn: #f2c4b2;
+      --btn-text: #5b3b32;
+      --soft: rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--ink); background: linear-gradient(160deg,var(--bg1),var(--bg2));
+      background-attachment: fixed; 
+      font-family: 'Anantason Mon Thin', system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Thai", sans-serif;
+    }
+    body::before{ /* background image overlay */
+      content:""; position:fixed; inset:0; z-index:-1;
+      background-image:url('assets/bg.png');
+      background-size:cover; background-position:center; opacity:.35; filter: blur(2px);
+    }
+
+    /* -------------------- Layout -------------------- */
+    .wrap{ max-width:980px; margin-inline:auto; padding:20px 16px 80px }
+
+    nav.steps{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px }
+    .step-chip{
+      padding:10px 14px; border-radius:999px; backdrop-filter:saturate(1.2) blur(8px);
+      background:var(--pill); border:1px solid var(--glass-2);
+      color:#6e534b; letter-spacing:.2px; font-size:14px;
+    }
+    .step-chip.active{ background:var(--pill-active); color:#3b2b27 }
+    .step-chip {
+  padding:10px 14px;
+  border-radius:999px;
+  backdrop-filter:saturate(1.2) blur(8px);
+  background:var(--pill);
+  border:1px solid var(--glass-2);
+  color:#6e534b;
+  letter-spacing:.2px;
+  font-size:14px;
+  text-decoration: none; /* <<< ตัดเส้นขีดออก */
+  display:inline-block;  /* <<< ให้ดูเป็นปุ่มแท้ ๆ */
+}
+.step-chip:hover {
+  background: var(--pill-active);
+  color:#3b2b27;
+}
+
+    .hero{ text-align:center; margin: 18px auto 12px }
+    .hero h1{ font-size: clamp(26px, 3.2vw, 40px); margin:12px 0 6px }
+    .hero p{ font-size: clamp(13px, 1.6vw, 16px); color:var(--ink-dim); margin:0 }
+
+    .checker{
+      margin: 26px auto; max-width:740px; background: var(--glass);
+      border:1px solid var(--glass-2); border-radius: 20px; padding: 14px; box-shadow: 0 12px 30px rgba(0,0,0,.12); overflow:hidden
+    }
+    .row{ display:grid; grid-template-columns: 1fr; gap:14px }
+    @media (min-width: 840px){ .row{ grid-template-columns: 1.4fr .9fr } }
+
+    .form{
+      background: rgba(255,255,255,.55); border-radius:16px; padding:16px; border:1px solid rgba(255,255,255,.6);
+      transition: opacity .35s ease, transform .35s ease; will-change: opacity, transform;
+    }
+
+    .field{ display:flex; gap:8px; align-items:center; }
+    .field input{
+      flex:1; padding:14px 14px; border-radius:12px; border:1px solid var(--soft);
+      outline:none; background:#fff; font-size:16px;
+    }
+    .btn{ appearance:none; border:0; border-radius:999px; padding:12px 18px; font-weight:700; cursor:pointer;
+      background:var(--btn); color:var(--btn-text); box-shadow: 0 6px 16px rgba(0,0,0,.12);
+    }
+    .btn:disabled{ opacity:.6; cursor:not-allowed }
+
+    .hint{ font-size:12px; color:var(--ink-dim); margin-top:6px }
+    .hint a{ color:#3b2b27 }
+
+    /* Result card (hidden until check) */
+    .card{
+      background: rgba(255,255,255,.65); border-radius:18px; padding:22px; text-align:center;
+      border:1px solid rgba(255,255,255,.75);
+      opacity:0; transform: translateY(10px); pointer-events:none; transition: opacity .35s ease, transform .35s ease;
+    }
+    .card.is-visible{ opacity:1; transform: translateY(0); pointer-events:auto }
+
+    .phone-box{ position:relative; width:min(280px, 80%); margin:16px auto 8px }
+    .phone{ width:100%; display:block; filter: drop-shadow(0 10px 22px rgba(0,0,0,.18)); }
+
+    /* New 3D badge (not flat) */
+    .badge{ position:absolute; right:-14px; top:-14px; width:clamp(64px,7vw,88px); aspect-ratio:1/1; border-radius:999px;
+      display:grid; place-items:center; box-shadow: inset 0 3px 8px rgba(255,255,255,.35), inset 0 -8px 16px rgba(0,0,0,.28), 0 10px 24px rgba(0,0,0,.28);
+      border:2px solid rgba(255,255,255,.55); overflow:hidden; transform: translateZ(0) scale(.92); transition: transform .28s ease }
+    .badge.pop{ transform: translateZ(0) scale(1) }
+    .badge svg{ width:58%; height:58%; filter: drop-shadow(0 1px 0 rgba(0,0,0,.25)) }
+
+    .result-text{ font-size: clamp(15px, 1.8vw, 18px); margin:10px auto 18px; }
+
+    .cta{ display:flex; flex-direction:column; align-items:center; gap:6px }
+    .cta .apply{ min-width: 260px; }
+    .cta .how{ font-size:12px; text-decoration:underline; color:rgba(0,0,0,.6); background:none; border:0; cursor:pointer }
+
+    [data-status="pass"] .result-text{ color: var(--ok) }
+    [data-status="fail"] .result-text{ color: var(--ng) }
+
+    .fade-out{ opacity:0 !important; transform: translateY(8px) !important; pointer-events:none }
+
+    /* Requirements section */
+    .req{ margin: 26px auto 0; background: rgba(255,255,255,.45); border:1px solid var(--glass-2);
+      border-radius: 16px; padding: 18px }
+    .req h2{ margin:0 0 10px; font-size: clamp(18px, 2.6vw, 26px) }
+    .req ul{ margin:0; padding-left: 20px }
+    .req li{ margin:6px 0; color:var(--ink-dim); }
+
+    footer{ text-align:center; margin-top: 24px; font-size:12px; color:rgba(0,0,0,.55) }
+  </style>
+  <style>
+  /* กันคลิกขวา + เลือกข้อความ */
+  body {
+    -webkit-user-select: none; /* Chrome/Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE/Edge */
+    user-select: none;         /* มาตรฐาน */
+  }
+</style>
+<script>
+  // ปิดคลิกขวา
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  // ปิด Ctrl+C / Ctrl+U
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey && (e.key === 'c' || e.key === 'u')) || e.key === 'PrintScreen') {
+      e.preventDefault();
+      alert('❌ ไม่อนุญาตให้คัดลอกข้อความ');
+    }
+  });
+</script>
+
+</head>
+<body>
+  <div class="wrap">
+    <nav class="steps" aria-label="ขั้นตอน">
+      <div class="step-chip active">✍️ กรอกสมาร์ทโฟน</div>
+     
+      <a class="step-chip" href="https://docs.google.com/forms/d/e/1FAIpQLSdteJLh6lsSFKmmOrIRtTQsODhvXHQVZC0kffW5q7i7CC9iSg/viewform" target="_blank" rel="noopener">📩 สมัครเข้าร่วม</a>
+    </nav>
+
+    <header class="hero">
+      <h1>เช็คทรศ.เลยว่าจะได้เข้าร่วมกับพรี่ๆมั้ย</h1>
+      <p>กรอกรุ่นมือถือของคุณ แล้วกด "เช็คเลย" ระบบจะบอกทันทีว่า <strong>ผ่านเกณฑ์อุปกรณ์</strong> ที่พี่ตั้งไว้ได้หรือไม่</p>
+    </header>
+
+    <section class="checker" id="checker">
+      <div class="row">
+        <!-- LEFT: FORM -->
+        <div class="form" id="formBox">
+          <label for="model" class="hint" style="display:block;margin-bottom:8px">ชื่อรุ่นมือถือ (เช่น <em>iPhone 16 Pro, Galaxy S24 Ultra, Pixel 8</em>)</label>
+          <div class="field">
+            <input id="model" list="phone-list" name="model" placeholder="พิมพ์ชื่อรุ่นที่นี่..." autocomplete="off" />
+            <button class="btn" id="btnCheck">เช็คเลย</button>
+          </div>
+          <datalist id="phone-list"></datalist>
+          <div class="hint">งานด่วนงานไวพี่เพิ่งว่างมาปั่นมันเลยไม่ค่อยสวย 555555 </div>
+        </div>
+
+        <!-- RIGHT: RESULT CARD (hidden until check) -->
+        <div class="card" id="resultCard" data-status="fail" aria-live="polite" aria-hidden="true">
+          <div class="phone-box">
+            <img class="phone" src="assets/phone.png" alt="ภาพโทรศัพท์" />
+            <div class="badge" id="badge" aria-hidden="true"></div>
+          </div>
+          <p class="result-text" id="resultText">ผลจะปรากฏหลังจากกดเช็ค</p>
+          <div class="cta">
+            <a class="btn apply" id="applyBtn" href="https://docs.google.com/forms/d/e/1FAIpQLSdteJLh6lsSFKmmOrIRtTQsODhvXHQVZC0kffW5q7i7CC9iSg/viewform" target="_blank" rel="noopener">สมัครเลยที่นี่</a>
+            <button class="how" onclick="alert('น้องคิดว่าไงพี่คิดว่าแบบนั้น')">สมัครยังไง?</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Requirements on the same page -->
+    <section class="req" id="req">
+      <h2>คุณสมบัติที่ต้องมี</h2>
+      <ul>
+        <li>มีพื้นฐานการถ่ายรูป</li>
+        <li>ขยัน ส่งรูปตามเวลา ไม่ทำงานอื่นซ้อน</li>
+        <li>จำเป็นต้องเช็คตารางการแข่งเองว่าแข่งหรือไม่</li>
+        <li>ใช้ GoogleDrive เป็น</li>
+      </ul>
+    </section>
+
+    <footer>
+      เว็บเทพด้วยพรี่คนหล่อ พรี่อัพลง Github ด้วยนะแต่หาเอาเอง
+    </footer>
+  </div>
+
+  <script>
+    // -------------------- Utils --------------------
+    const $ = (sel, root=document) => root.querySelector(sel);
+
+    const NORMALIZE = s => (s||'').toString().toLowerCase()
+      .replace(/\s+/g,'')
+      .replace(/[()\[\]\-_.+]/g,'');
+
+    const rulePass = (mp, video, ois) => {
+      const v = (video||'').toUpperCase();
+      const mpOK = (Number(mp)||0) >= 48;
+      const videoOK = v.includes('4K60') || v.includes('8K');
+      const oisOK = !!ois;
+      return mpOK && videoOK && oisOK;
+    };
+
+    // -------------------- Load Dataset --------------------
+    const SOURCES = [
+      'camera_phones_max_2022_2025.json',
+      'camera_phones_full_2025.json'
+    ];
+    let DATA = [];
+
+    async function loadData(){
+      for (const url of SOURCES){
+        try{
+          const res = await fetch(url, {cache:'no-store'});
+          if(!res.ok) continue;
+          const arr = await res.json();
+          if(Array.isArray(arr)) { DATA = arr; break; }
+        }catch(e){ /* try next */ }
+      }
+      if(!DATA.length){ console.warn('⚠️ ไม่พบไฟล์ฐานข้อมูล JSON'); }
+
+      // Build datalist only (no suggest buttons)
+      const dlist = $('#phone-list');
+      const frag = document.createDocumentFragment();
+      DATA.forEach(rec => {
+        const model = rec['รุ่น'] || rec['Model'];
+        const opt = document.createElement('option');
+        opt.value = model; frag.appendChild(opt);
+      });
+      dlist.appendChild(frag);
+    }
+
+    // -------------------- Find & Check --------------------
+    function findPhone(query){
+      if(!DATA.length) return null;
+      const q = NORMALIZE(query);
+      if(!q) return null;
+      let rec = DATA.find(r => NORMALIZE(r['รุ่น']||r['Model']) === q);
+      if(rec) return rec;
+      rec = DATA.find(r => NORMALIZE(r['รุ่น']||r['Model']).startsWith(q));
+      if(rec) return rec;
+      rec = DATA.find(r => NORMALIZE(r['รุ่น']||r['Model']).includes(q));
+      return rec || null;
+    }
+
+    function computePass(rec){
+      const key = 'ผ่านเกณฑ์ชมรม (ค่าเริ่มต้น)';
+      if(Object.prototype.hasOwnProperty.call(rec, key)) return !!rec[key];
+      const mp = rec['กล้องหลัก (MP)'] || rec['Main_MP'];
+      const video = rec['วิดีโอสูงสุด'] || rec['Video_Max'];
+      const ois = rec['มี OIS'] ?? rec['OIS'];
+      return rulePass(mp, video, ois);
+    }
+
+    function showBadge(pass){
+      const badge = $('#badge');
+      if(pass){
+        badge.style.background = 'radial-gradient(120% 120% at 30% 30%, #a4ffc8 0%, #28c76f 55%, #19b461 100%)';
+        badge.innerHTML = `<svg viewBox='0 0 64 64' aria-hidden='true'>
+          <path d='M16 34 L28 46 L50 20' stroke='#fff' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/>
+        </svg>`;
+      }else{
+        badge.style.background = 'radial-gradient(120% 120% at 30% 30%, #ffb4b4 0%, #ff6464 55%, #df2a2a 100%)';
+        badge.innerHTML = `<svg viewBox='0 0 64 64' aria-hidden='true'>
+          <path d='M18 18 L46 46 M46 18 L18 46' stroke='#fff' stroke-width='8' fill='none' stroke-linecap='round'/>
+        </svg>`;
+      }
+      badge.classList.remove('pop'); requestAnimationFrame(()=>badge.classList.add('pop'));
+    }
+
+    function showResult(pass){
+      const card = $('#resultCard');
+      const txt  = $('#resultText');
+      if(pass){
+        card.setAttribute('data-status','pass');
+        txt.textContent = 'ยินดีด้วย โทรศัพท์ของคุณผ่านเกณฑ์เข้าร่วมสมาชิก';
+      }else{
+        card.setAttribute('data-status','fail');
+        txt.textContent = 'เสียใจด้วย โทรศัพท์ของคุณไม่ผ่านเกณฑ์เข้าร่วมสมาชิก';
+      }
+      showBadge(pass);
+      card.classList.add('is-visible');
+      card.setAttribute('aria-hidden','false');
+    }
+
+    async function runCheck(){
+      const formBox = $('#formBox');
+      const q = $('#model').value.trim();
+      const found = findPhone(q);
+      const pass = found ? computePass(found) : false;
+      // fade out form then show result
+      formBox.classList.add('fade-out');
+      setTimeout(()=>{ showResult(pass); }, 360);
+    }
+
+    // -------------------- Events --------------------
+    window.addEventListener('DOMContentLoaded', async ()=>{
+      await loadData();
+      $('#btnCheck').addEventListener('click', runCheck);
+      $('#model').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); runCheck(); }});
+    });
+  </script>
+</body>
+</html>
